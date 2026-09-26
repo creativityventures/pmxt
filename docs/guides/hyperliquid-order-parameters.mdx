@@ -1,0 +1,39 @@
+# Hyperliquid order parameters
+
+This guide explains the optional order fields that are specific to Hyperliquid or to other venues supported by PMXT. The fields are forwarded by the TypeScript SDK when supported by the selected venue.
+
+## Builder attribution
+
+Use the builder field with a valid Hyperliquid builder address and builderFee with the builder fee expressed in tenths of a basis point, as defined by CreateOrderParams in core/src/types.ts. These fields are venue-specific: do not send them to a venue unless its adapter documents them. Confirm the fee policy and authorization with the builder before submitting an order.
+
+```ts
+await exchange.createOrder({
+  marketId, outcomeId, side: "buy", orderType: "limit", amount: 5, price: 0.42,
+  builder: "0xBuilderAddress", builderFee: 10,
+});
+```
+
+Keep the builder address in trusted configuration and validate it before signing. A builder fee changes the economics of an order; display it to the user and include it in any approval or risk review.
+
+## Limitless delegated signing
+
+The onBehalfOf field is a Limitless-specific profile identifier used when delegated signing trades on behalf of a profile. It is not a wallet address and should be bound to the authenticated account on the server. Never accept an arbitrary profile ID from an untrusted browser request.
+
+## Polymarket overrides
+
+The tickSize field can override the venue tick size where supported, while negRisk can override the negative-risk lookup on Polymarket. These are compatibility controls, not general-purpose price validation. The adapter and venue remain authoritative; reject values that do not match the market metadata.
+
+## Fee field
+
+The fee field is an optional fee rate. Its unit and meaning depend on the adapter, so callers should prefer the venue-specific guide and inspect the normalized order response. Do not infer that a numeric value has the same unit across venues.
+
+## Safety checklist
+
+- validate the venue before forwarding optional fields;
+- compare price, tick size and fee values with current market metadata;
+- bind delegated profile IDs to the authenticated user;
+- show builder attribution and fees before signing;
+- keep private keys and credentials outside client-side configuration;
+- treat unsupported fields as an integration error rather than silently assuming they were applied.
+
+For the complete type definitions and forwarding behavior, see core/src/types.ts, sdks/typescript/pmxt/models.ts and sdks/typescript/pmxt/client.ts. This page documents the existing API surface; it does not claim that every field is supported by every venue.
